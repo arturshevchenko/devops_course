@@ -1,6 +1,6 @@
 # ==== Конфігурація ====
-IMAGE_NAME=test-app
-REGISTRY=quay.io/your-org
+IMAGE_NAME=golang
+REGISTRY=quay.io/projectquay
 
 # ==== Платформи ====
 LINUX_PLATFORMS=linux_amd64 linux_arm64
