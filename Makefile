@@ -16,8 +16,6 @@ $(foreach plat,$(PLATFORMS),$(eval $(subst /,_,${plat}): ; docker buildx build -
 
 all: $(subst /,_,${PLATFORMS})
 
-clean:
-	rm -rf build/
 
 # ==== Clean ====
 clean:
