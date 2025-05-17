@@ -1,10 +1,16 @@
-# Параметри
+# ==== Конфігурація ====
 IMAGE_NAME=test-app
 REGISTRY=quay.io/your-org
-PLATFORMS=linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 
-# Build for selected platform
-define make_build_target
+# ==== Платформи ====
+LINUX_PLATFORMS=linux_amd64 linux_arm64
+MACOS_PLATFORMS=darwin_amd64 darwin_arm64
+WINDOWS_PLATFORMS=windows_amd64
+
+ALL_PLATFORMS=$(LINUX_PLATFORMS) $(MACOS_PLATFORMS) $(WINDOWS_PLATFORMS)
+
+# ==== Загальні шаблони ====
+define build_target
 $(1):
 	docker buildx build \
 		--platform $(subst _,/,$(1)) \
@@ -15,11 +21,17 @@ $(1):
 		.
 endef
 
-# Генеруємо цілі (наприклад, make linux_amd64)
-$(foreach plat,$(subst /,_,${PLATFORMS}),$(eval $(call make_build_target,$(plat))))
+$(foreach plat,$(ALL_PLATFORMS),$(eval $(call build_target,$(plat))))
 
-# Clean – видалення образів
+# ==== Групові команди ====
+linux: $(LINUX_PLATFORMS)
+macos: $(MACOS_PLATFORMS)
+windows: $(WINDOWS_PLATFORMS)
+
+all: $(ALL_PLATFORMS)
+
+# ==== Clean ====
 clean:
-	@for platform in $(subst /,_,${PLATFORMS}); do \
+	@for platform in $(ALL_PLATFORMS); do \
 		docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform || true; \
 	done
