@@ -7,7 +7,7 @@ FROM quay.io/projectquay/golang:1.21 AS builder
 WORKDIR /app
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o app
+RUN CGO_ENABLED=0 go build -o app
 
 FROM quay.io/projectquay/golang:1.21
 

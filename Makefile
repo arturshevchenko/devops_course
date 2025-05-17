@@ -17,7 +17,7 @@ $(1):
 		--tag $(REGISTRY)/$(IMAGE_NAME):$(1) \
 		--build-arg TARGETOS=$(word 1,$(subst _, ,$(1))) \
 		--build-arg TARGETARCH=$(word 2,$(subst _, ,$(1))) \
-		--output type=docker \
+		--load \
 		.
 endef
 
