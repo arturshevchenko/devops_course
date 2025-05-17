@@ -16,6 +16,14 @@ $(foreach plat,$(PLATFORMS),$(eval $(subst /,_,${plat}): ; docker buildx build -
 
 all: $(subst /,_,${PLATFORMS})
 
+image:
+	docker buildx build \
+		--platform linux/amd64 \
+		--build-arg TARGETOS=linux \
+		--build-arg TARGETARCH=amd64 \
+		--output type=docker \
+		--tag quay.io/your-org/test-app:linux_amd64 \
+		.
 
 # ==== Clean ====
 clean:
