@@ -1,34 +1,23 @@
 # ==== Конфігурація ====
 IMAGE_NAME=golang
 REGISTRY=quay.io/projectquay
+BUILDX=buildx
 
-# ==== Платформи ====
-LINUX_PLATFORMS=linux_amd64 linux_arm64
-MACOS_PLATFORMS=darwin_amd64 darwin_arm64
-WINDOWS_PLATFORMS=windows_amd64
 
-ALL_PLATFORMS=$(LINUX_PLATFORMS) $(MACOS_PLATFORMS) $(WINDOWS_PLATFORMS)
+PLATFORMS=linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 
-# ==== Загальні шаблони ====
-define build_target
-$(1):
-	docker buildx build \
-		--platform $(subst _,/,$(1)) \
-		--tag $(REGISTRY)/$(IMAGE_NAME):$(1) \
-		--build-arg TARGETOS=$(word 1,$(subst _, ,$(1))) \
-		--build-arg TARGETARCH=$(word 2,$(subst _, ,$(1))) \
-		--load \
-		.
-endef
+.PHONY: all clean $(subst /,_,$(PLATFORMS))
 
-$(foreach plat,$(ALL_PLATFORMS),$(eval $(call build_target,$(plat))))
+$(foreach plat,$(PLATFORMS),$(eval $(subst /,_,${plat}): ; docker buildx build --platform ${plat} \
+	--build-arg TARGETOS=$(word 1,$(subst /, ,${plat})) \
+	--build-arg TARGETARCH=$(word 2,$(subst /, ,${plat})) \
+	--output type=local,dest=build/$(subst /,_,${plat}) \
+	--file Dockerfile .))
 
-# ==== Групові команди ====
-linux: $(LINUX_PLATFORMS)
-macos: $(MACOS_PLATFORMS)
-windows: $(WINDOWS_PLATFORMS)
+all: $(subst /,_,${PLATFORMS})
 
-all: $(ALL_PLATFORMS)
+clean:
+	rm -rf build/
 
 # ==== Clean ====
 clean:
