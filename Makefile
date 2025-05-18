@@ -47,6 +47,20 @@ build-windows: $(DIST_DIR)
 	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o $(DIST_DIR)/app-$(OS)-$(ARCH).exe .
 
 
+image:
+	@for platform in $(IMAGE_PLATFORMS); do \
+		os=$$(echo $$platform | cut -d_ -f1); \
+		arch=$$(echo $$platform | cut -d_ -f2); \
+		echo "🐳 Building Docker image for $$platform..."; \
+		docker buildx build \
+			--platform $$os/$$arch \
+			--build-arg TARGETOS=$$os \
+			--build-arg TARGETARCH=$$arch \
+			--output type=docker \
+			--tag $(REGISTRY)/$(IMAGE_NAME):$$platform \
+			. ; \
+	done
+	
 clean:
 	rm -rf $(DIST_DIR)
 	for platform in $(PLATFORMS); do \
