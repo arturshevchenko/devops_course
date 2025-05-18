@@ -1,1 +1,3 @@
-go 1.21
+module ex.com
+
+go 1.24.1

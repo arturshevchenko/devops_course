@@ -6,10 +6,13 @@ ARG TARGETARCH
 FROM quay.io/projectquay/golang:1.24 AS builder
 
 WORKDIR /app
-COPY . .
+COPY go.mod .
+COPY main.go .
+# COPY . .
 
 # Build the application
-RUN make build
+# RUN make build
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o app .
 
 FROM scratch
 WORKDIR /
