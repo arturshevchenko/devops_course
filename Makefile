@@ -3,15 +3,15 @@ REGISTRY=quay.io/projectquay
 BUILDX=buildx
 
 
-PLATFORMS=linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
+PLATFORMS=linux_amd64 linux_arm64 darwin_amd64 darwin_arm64 windows_amd64
 
 .PHONY: all clean $(subst /,_,$(PLATFORMS))
 
-$(foreach plat,$(PLATFORMS),$(eval $(subst /,_,${plat}): ; docker buildx build --platform ${plat} \
+$(foreach plat,$(PLATFORMS),$(eval $(subst _,/,${plat}): ; docker buildx build --platform ${plat} \
 	CGO_ENABLED=0 \
-	--build-arg TARGETOS=$(word 1,$(subst /, ,${plat})) \
-	--build-arg TARGETARCH=$(word 2,$(subst /, ,${plat})) \
-	--output type=docker,dest=build/$(subst /,_,${plat}) \
+	--build-arg TARGETOS=$(word 1,$(subst _, ,${plat})) \
+	--build-arg TARGETARCH=$(word 2,$(subst _, ,${plat})) \
+	--output type=docker,dest=build/$(subst _,/,${plat}) \
 	--file Dockerfile .))
 
 all: $(subst /,_,${PLATFORMS})
