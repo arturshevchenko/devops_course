@@ -1,45 +1,54 @@
-IMAGE_NAME=golang
 REGISTRY=quay.io/projectquay
-BUILDX=buildx
+IMAGE_NAME=test-app
+DIST_DIR=dist
 
-PLATFORMS=linux_amd64 linux_arm64 darwin_amd64 darwin_arm64 windows_amd64
+PLATFORMS=linux_amd64 linux_arm64 windows_amd64 darwin_amd64 darwin_arm64
 
-.PHONY: all clean $(PLATFORMS) init-module
-
-init-module:
-	@if [ ! -f go.mod ]; then \
-		go mod init devops_course && \
-		go mod tidy; \
-	fi
-
-build: init-module
-	CGO_ENABLED=0 go build -o app .
-
-define PLATFORM_template
-$(1):
-	docker buildx build \
-		--platform $(subst _,/,$(1)) \
-		--build-arg TARGETOS=$(word 1,$(subst _, ,$(1))) \
-		--build-arg TARGETARCH=$(word 2,$(subst _, ,$(1))) \
-		--output type=docker \
-		--tag $(REGISTRY)/test-app:$(1) \
-		.
-endef
-
-$(foreach plat,$(PLATFORMS),$(eval $(call PLATFORM_template,$(plat))))
+.PHONY: all clean $(PLATFORMS)
 
 all: $(PLATFORMS)
 
-image:
+$(DIST_DIR):
+	mkdir -p $(DIST_DIR)
+
+linux_amd64:
+	$(MAKE) build-platform OS=linux ARCH=amd64
+
+linux_arm64:
+	$(MAKE) build-platform OS=linux ARCH=arm64
+
+windows_amd64:
+	$(MAKE) build-platform OS=windows ARCH=amd64
+
+darwin_amd64:
+	$(MAKE) build-darwin OS=darwin ARCH=amd64
+
+darwin_arm64:
+	$(MAKE) build-darwin OS=darwin ARCH=arm64
+
+build-platform:
 	docker buildx build \
-		--platform linux/amd64 \
-		--build-arg TARGETOS=linux \
-		--build-arg TARGETARCH=amd64 \
+		--platform $(OS)/$(ARCH) \
+		--build-arg TARGETOS=$(OS) \
+		--build-arg TARGETARCH=$(ARCH) \
 		--output type=docker \
-		--tag quay.io/projectquay/test-app:linux_amd64 \
+		--tag $(REGISTRY)/$(IMAGE_NAME):$(OS)_$(ARCH) \
 		.
 
+build-darwin: $(DIST_DIR)
+	@echo "🛠 Building darwin binary for $(ARCH)..."
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o $(DIST_DIR)/app-$(OS)-$(ARCH) .
+	
+windows_amd64:
+	$(MAKE) build-windows OS=windows ARCH=amd64
+
+build-windows: $(DIST_DIR)
+	@echo "🛠 Building Windows binary for $(ARCH)..."
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o $(DIST_DIR)/app-$(OS)-$(ARCH).exe .
+
+
 clean:
-	@for platform in $(PLATFORMS); do \
-		docker rmi $(REGISTRY)/test-app:$$platform || true; \
+	rm -rf $(DIST_DIR)
+	for platform in $(PLATFORMS); do \
+		docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform 2>/dev/null || true; \
 	done

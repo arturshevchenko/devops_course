@@ -3,18 +3,16 @@
 ARG TARGETOS
 ARG TARGETARCH
 
-FROM quay.io/projectquay/golang:1.24 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.21.6-alpine3.19 AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 COPY go.mod .
 COPY main.go .
-# COPY . .
 
-# Build the application
-# RUN make build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o app .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/app .
 
 FROM scratch
-WORKDIR /
-COPY --from=builder /app .
+COPY --from=builder /out/app /app
 ENTRYPOINT ["/app"]
