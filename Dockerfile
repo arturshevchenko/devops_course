@@ -3,7 +3,7 @@
 ARG TARGETOS
 ARG TARGETARCH
 
-FROM golang:1.21 AS builder
+FROM quay.io/projectquay/golang:1.24 AS builder
 
 WORKDIR /app
 COPY . .
