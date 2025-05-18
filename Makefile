@@ -17,8 +17,8 @@ linux_amd64:
 linux_arm64:
 	$(MAKE) build-platform OS=linux ARCH=arm64
 
-windows_amd64:
-	$(MAKE) build-platform OS=windows ARCH=amd64
+# windows_amd64:
+# 	$(MAKE) build-platform OS=windows ARCH=amd64
 
 darwin_amd64:
 	$(MAKE) build-darwin OS=darwin ARCH=amd64
@@ -38,7 +38,7 @@ build-platform:
 build-darwin: $(DIST_DIR)
 	@echo "🛠 Building darwin binary for $(ARCH)..."
 	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o $(DIST_DIR)/app-$(OS)-$(ARCH) .
-	
+
 windows_amd64:
 	$(MAKE) build-windows OS=windows ARCH=amd64
 
