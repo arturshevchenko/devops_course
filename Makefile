@@ -60,9 +60,10 @@ image:
 			--tag $(REGISTRY)/$(IMAGE_NAME):$$platform \
 			. ; \
 	done
-	
+
 clean:
-	rm -rf $(DIST_DIR)
-	for platform in $(PLATFORMS); do \
-		docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform 2>/dev/null || true; \
-	done
+	docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform 2>/dev/null || true;
+	# rm -rf $(DIST_DIR)
+	# for platform in $(PLATFORMS); do \
+	# 	docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform 2>/dev/null || true; \
+	# done
