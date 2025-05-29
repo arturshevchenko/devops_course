@@ -1,18 +1,15 @@
-# syntax=docker/dockerfile:1.4
+FROM --platform=$BUILDPLATFORM quay.io/projectquay/golang:1.21 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
 
-FROM --platform=$BUILDPLATFORM golang:1.21.6-alpine3.19 AS builder
-ARG TARGETOS
-ARG TARGETARCH
+WORKDIR /go/src/app
+COPY . .
 
-WORKDIR /app
-COPY go.mod .
-COPY main.go .
-
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/app .
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} make build
 
 FROM scratch
-COPY --from=builder /out/app /app
-ENTRYPOINT ["/app"]
+WORKDIR /
+COPY --from=builder /go/src/app/kbot .
+COPY --from=alpine:latest /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+ENTRYPOINT ["./kbot", "start"]

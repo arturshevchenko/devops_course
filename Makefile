@@ -1,69 +1,46 @@
-REGISTRY=quay.io/projectquay
-IMAGE_NAME=test-app
-DIST_DIR=dist
+APP := $(shell basename -s .git $(shell git remote get-url origin))
+REGISTRY := ghcr.io/oltsy77
+VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")-$(shell git rev-parse --short HEAD)
 
-PLATFORMS=linux_amd64 linux_arm64 windows_amd64 darwin_amd64 darwin_arm64
+TARGETOS ?= darwin
+TARGETARCH ?= arm64
 
-.PHONY: all clean $(PLATFORMS)
 
-all: $(PLATFORMS)
+format:
+	gofmt -s -w ./
 
-$(DIST_DIR):
-	mkdir -p $(DIST_DIR)
+get:
+	go get ./
 
-linux_amd64:
-	$(MAKE) build-platform OS=linux ARCH=amd64
+lint:
+	go vet ./
 
-linux_arm64:
-	$(MAKE) build-platform OS=linux ARCH=arm64
+test:
+	go test -v ./
 
-# windows_amd64:
-# 	$(MAKE) build-platform OS=windows ARCH=amd64
-
-darwin_amd64:
-	$(MAKE) build-darwin OS=darwin ARCH=amd64
-
-darwin_arm64:
-	$(MAKE) build-darwin OS=darwin ARCH=arm64
-
-build-platform:
-	docker buildx build \
-		--platform $(OS)/$(ARCH) \
-		--build-arg TARGETOS=$(OS) \
-		--build-arg TARGETARCH=$(ARCH) \
-		--output type=docker \
-		--tag $(REGISTRY)/$(IMAGE_NAME):$(OS)_$(ARCH) \
-		.
-
-build-darwin: $(DIST_DIR)
-	@echo "🛠 Building darwin binary for $(ARCH)..."
-	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o $(DIST_DIR)/app-$(OS)-$(ARCH) .
-
-windows_amd64:
-	$(MAKE) build-windows OS=windows ARCH=amd64
-
-build-windows: $(DIST_DIR)
-	@echo "🛠 Building Windows binary for $(ARCH)..."
-	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o $(DIST_DIR)/app-$(OS)-$(ARCH).exe .
-
+build: format get
+	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o kbot -ldflags "-X=github.com/oltsy77/kbot/cmd.appVersion=${VERSION}"
 
 image:
-	@for platform in $(IMAGE_PLATFORMS); do \
-		os=$$(echo $$platform | cut -d_ -f1); \
-		arch=$$(echo $$platform | cut -d_ -f2); \
-		echo "🐳 Building Docker image for $$platform..."; \
-		docker buildx build \
-			--platform $$os/$$arch \
-			--build-arg TARGETOS=$$os \
-			--build-arg TARGETARCH=$$arch \
-			--output type=docker \
-			--tag $(REGISTRY)/$(IMAGE_NAME):$$platform \
-			. ; \
-	done
+	docker build . -t $(REGISTRY)/$(APP):$(VERSION)-$(TARGETARCH) \
+		--build-arg TARGETARCH=$(TARGETARCH) \
+		--build-arg VERSION=$(VERSION)
+
+push:
+	docker push ${REGISTRY}/${APP}:${VERSION}-${TARGETARCH}
+
+linux:
+	$(MAKE) TARGETOS=linux TARGETARCH=amd64 image
+
+arm:
+	$(MAKE) TARGETOS=linux TARGETARCH=arm64 image
+
+macos:
+	$(MAKE) TARGETOS=darwin TARGETARCH=arm64 image
+
+windows:
+	$(MAKE) TARGETOS=windows TARGETARCH=amd64 image
 
 clean:
-	docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform 2>/dev/null || true;
-	# rm -rf $(DIST_DIR)
-	# for platform in $(PLATFORMS); do \
-	# 	docker rmi $(REGISTRY)/$(IMAGE_NAME):$$platform 2>/dev/null || true; \
-	# done
+	rm -f kbot
+	docker rmi -f ${REGISTRY}/${APP}:${VERSION}-${TARGETARCH} || true
